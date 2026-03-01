@@ -1,0 +1,111 @@
+# docker-compose para DESENVOLVIMENTO LOCAL
+# Produção: use Coolify (cada app como serviço separado, MySQL gerenciado ou externo)
+services:
+  # ========================================
+  # INFRAESTRUTURA
+  # ========================================
+  
+  mysql:
+    image: mysql:8.0
+    container_name: lojademo_mysql
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-lojademo_db}
+      MYSQL_USER: ${MYSQL_USER:-lojademo_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-lojademo_pass}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-lojademo_root}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - lojademo_network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\" || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+  # ========================================
+  # BACKEND - lojademo-service (Laravel)
+  # ========================================
+  
+  lojademo-service:
+    build:
+      context: ./projects/lojademo-service
+      dockerfile: Dockerfile.dev
+    container_name: lojademo_service
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      APP_KEY: base64:placeholder
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${MYSQL_DATABASE:-lojademo_db}
+      DB_USERNAME: ${MYSQL_USER:-lojademo_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-lojademo_pass}
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://127.0.0.1:3000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./projects/lojademo-service:/var/www/html
+      - lojademo_service_vendor:/var/www/html/vendor
+      - lojademo_service_storage:/var/www/html/storage
+    networks:
+      - lojademo_network
+    command: >
+      sh -c "mkdir -p /var/www/html/storage/framework/sessions /var/www/html/storage/framework/views /var/www/html/storage/framework/cache/data &&
+        composer install --no-interaction &&
+        php artisan key:generate --force &&
+        php artisan migrate --force &&
+        php artisan db:seed --force &&
+        php artisan config:clear &&
+        php artisan serve --host=0.0.0.0 --port=8000"
+    healthcheck:
+      test: ["CMD", "php", "artisan", "migrate:status"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s
+    restart: unless-stopped
+
+  # ========================================
+  # FRONTEND
+  # ========================================
+  
+  # Frontend (área logada) - consome API do lojademo-service
+  lojademo-react:
+    build:
+      context: ./projects/lojademo-react
+      dockerfile: Dockerfile.dev
+    container_name: lojademo_react
+    depends_on:
+      lojademo-service:
+        condition: service_healthy
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000/api/v1
+      VITE_APP_NAME: Lojademo
+    ports:
+      - "3000:5173"
+    volumes:
+      - ./projects/lojademo-react:/app
+      - lojademo_react_node_modules:/app/node_modules
+    networks:
+      - lojademo_network
+    command: npm run dev -- --host 0.0.0.0
+    restart: unless-stopped
+
+
+networks:
+  lojademo_network:
+    driver: bridge
+
+
+volumes:
+  mysql_data:
+  lojademo_service_vendor:
+  lojademo_service_storage:
+  lojademo_react_node_modules:

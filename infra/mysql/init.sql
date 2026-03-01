@@ -1,0 +1,2 @@
+-- MySQL init (opcional). O database é criado via MYSQL_DATABASE no docker-compose.
+-- Use este arquivo para comandos SQL adicionais na primeira subida do container.
