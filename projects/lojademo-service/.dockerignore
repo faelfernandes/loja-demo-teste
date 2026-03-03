@@ -1,0 +1,35 @@
+# Git e IDE
+.git
+.gitignore
+.idea
+.vscode
+*.swp
+*.swo
+
+# Dependências e cache local
+/vendor
+/node_modules
+.env
+.env.*
+!.env.example
+
+# Logs e cache do Laravel (não precisam na imagem)
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+!/storage/logs/.gitkeep
+!/storage/framework/cache/.gitkeep
+!/storage/framework/sessions/.gitkeep
+!/storage/framework/views/.gitkeep
+
+# Testes e docs (reduz contexto de build)
+/tests
+.phpunit.result.cache
+phpunit.xml
+*.md
+
+# Outros
+Dockerfile*
+docker-compose*
+.dockerignore

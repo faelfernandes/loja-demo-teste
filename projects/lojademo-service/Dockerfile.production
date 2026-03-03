@@ -1,16 +1,26 @@
-FROM composer:2 AS composer
-WORKDIR /app
+FROM php:8.4-cli-alpine
+
+RUN apk add --no-cache \
+    curl git unzip \
+    libpng-dev libzip-dev oniguruma-dev icu-dev libxml2-dev \
+    freetype-dev libjpeg-turbo-dev \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath zip intl xml \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd \
+    && apk del libpng-dev libzip-dev oniguruma-dev icu-dev libxml2-dev freetype-dev libjpeg-turbo-dev \
+    && rm -rf /var/cache/apk/*
+
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+WORKDIR /var/www
+
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --optimize-autoloader
-
-FROM php:8.4-fpm AS app
-WORKDIR /var/www/html
-
-COPY --from=composer /app/vendor ./vendor
+RUN composer install --no-dev --no-scripts --optimize-autoloader
 
 COPY . .
 
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 8081
-CMD ["php", "artisan", "octane:start", "--server=road-runner", "--host=0.0.0.0", "--port=8081"]
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8081"]
