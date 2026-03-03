@@ -28,6 +28,7 @@ services:
       APP_ENV: production
       APP_DEBUG: false
       APP_URL: https://api-lojademo.rfconsultoria.com.br
+      SANCTUM_STATEFUL_DOMAINS: lojademo.rfconsultoria.com.br,api-lojademo.rfconsultoria.com.br
     depends_on:
       mysql:
         condition: service_healthy
@@ -38,7 +39,7 @@ services:
       dockerfile: Dockerfile.production
     restart: always
     environment:
-      VITE_API_URL: https://lojademo.rfconsultoria.com.br/api
+      VITE_API_BASE_URL: https://api-lojademo.rfconsultoria.com.br/api
 
 volumes:
   dbdata:
