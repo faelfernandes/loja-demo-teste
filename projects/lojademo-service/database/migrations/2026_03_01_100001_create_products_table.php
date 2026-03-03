@@ -12,10 +12,13 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->text('description')->nullable();
-            $table->decimal('price', 10, 2);
+            $table->unsignedInteger('price'); // centavos
             $table->foreignId('category_id')->constrained()->cascadeOnDelete();
             $table->string('image_url')->nullable();
             $table->timestamps();
+
+            $table->index(['category_id', 'name'], 'idx_products_category_name');
+            $table->fullText(['name', 'description'], 'ft_products_name_description');
         });
     }
 

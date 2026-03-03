@@ -10,13 +10,14 @@ class CategorySeeder extends Seeder
     public function run(): void
     {
         $categories = [
-            ['name' => 'Eletrônicos'],
-            ['name' => 'Roupas'],
-            ['name' => 'Livros'],
-            ['name' => 'Casa'],
+            ['name' => 'Tênis'],
+            ['name' => 'Roupas Esportivas'],
+            ['name' => 'Acessórios'],
+            ['name' => 'Equipamentos'],
         ];
-        foreach ($categories as $cat) {
-            Category::firstOrCreate($cat);
+
+        foreach ($categories as $attributes) {
+            Category::firstOrCreate($attributes);
         }
     }
 }
