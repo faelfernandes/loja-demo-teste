@@ -1,12 +1,16 @@
-## LojaDemo v1.1.0 — Documentação e demonstração
+## LojaDemo v1.1.0 — Testes e documentação
 
-Atualização do README com seção de testes e GIFs de demonstração.
+Suíte de testes no backend, atualização do README e notas de release.
 
 ### O que mudou
 
-- **README — Testes:** Nova seção documentando a suíte de 51 testes do backend (PHPUnit), com cobertura Feature (Auth, Products, Categories) e Unit (Models e Services), e comando para rodar via Docker.
-- **README — Demonstração:** Nova seção com três GIFs (tela inicial, login e carrinho) para visualização rápida do fluxo da aplicação.
-- **Assets:** Inclusão dos arquivos `home.gif`, `login.gif` e `carrinho.gif` na raiz do repositório.
+- **Backend — 51 testes (PHPUnit):**
+  - **Feature:** Auth (registro, login, logout, alteração de senha), Products (CRUD, listagem com filtros/busca, validações), Categories (CRUD e validações).
+  - **Unit:** Models Product e Category (relacionamentos, preço promocional), ProductService e CategoryService.
+  - **Factories:** CategoryFactory e ProductFactory para os testes.
+- **README — Testes:** Seção documentando a suíte e o comando para rodar via Docker.
+- **README — Demonstração:** Seção com GIFs (tela inicial, login, carrinho) e assets `home.gif`, `login.gif`, `carrinho.gif` na raiz do repositório.
+- **Release notes:** Arquivos em `.github/release-v1.0.0.md` e `release-v1.1.0.md`.
 
 ### Links
 
