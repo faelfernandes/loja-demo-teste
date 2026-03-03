@@ -129,8 +129,11 @@ Volumes persistentes: `mysql_data`, `service_storage` (logs e arquivos do Larave
   - Manter **Include Source Commit in Build** desativado para aproveitar cache entre deploys e evitar rebuild completo.
   - No primeiro deploy, aguardar até ~10 minutos; em máquinas lentas ou com pouca memória o build pode demorar mais.
 
+- **"dependency failed to start: container lojademo-service is unhealthy"**  
+  O backend leva um tempo para subir (migrações + cache + `artisan serve`). O healthcheck tem `start_period: 90s` para esperar. Se ainda falhar: confira os logs do container `lojademo-service` no Coolify (ou `docker logs <container_id>` no servidor). Erros comuns: `APP_KEY` ausente, falha de conexão com MySQL, ou permissão em `storage`. Corrija as variáveis ou permissões e faça redeploy.
+
 - **"No Available Server" ou healthcheck falhando**  
-  Verifique se o container do backend está saudável (por exemplo `docker ps` no servidor). O healthcheck usa `GET /up` (rota padrão do Laravel em `bootstrap/app.php`); se não responder 200, o Coolify pode marcar o serviço como indisponível.
+  Verifique se o container do backend está saudável (por exemplo `docker ps` no servidor). O healthcheck usa `GET /up` (rota padrão do Laravel); se não responder 200, o Coolify marca o serviço como indisponível.
 
 - **Front não carrega ou chama API errada**  
   Confirme que o **build** do frontend foi feito com o `VITE_API_BASE_URL` correto (Build Args no Coolify ou valor no compose). Redeploy após alterar.
