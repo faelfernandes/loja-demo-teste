@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthService } from '../services/AuthService';
 import { useAuthStore } from '../store/authStore';
+import { useToastStore } from '../store/toastStore';
 import { LoginRequest } from '../types';
+import { APP_NAME } from '../config';
 import { Loader2, AlertCircle, Eye, EyeOff, Facebook } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const addToast = useToastStore((state) => state.addToast);
   
   const [formData, setFormData] = useState<LoginRequest>({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -25,13 +28,26 @@ export const Login: React.FC = () => {
 
     try {
       const response = await AuthService.login(formData);
-      
+
       if (response.token && response.user) {
         setAuth(response.token, response.user);
-        navigate('/');
+        addToast('Login realizado com sucesso!', { type: 'success' });
+        navigate('/', { replace: true });
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Falha ao realizar login. Verifique suas credenciais.');
+    } catch (err: unknown) {
+      let errorMessage = 'Falha ao realizar login. Verifique suas credenciais.';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })
+          .response?.data;
+        if (data?.errors) {
+          const firstKey = Object.keys(data.errors)[0];
+          const firstMsg = firstKey ? data.errors[firstKey]?.[0] : undefined;
+          if (firstMsg) errorMessage = firstMsg;
+        } else if (data?.message) {
+          errorMessage = data.message;
+        }
+      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -40,10 +56,7 @@ export const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4 md:p-8 w-full">
       <div className="max-w-6xl w-full bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-slate-200/50 flex overflow-hidden min-h-[650px] border border-slate-100">
-        
-        {/* Left Column - Lifestyle Image (Hidden on Mobile) */}
         <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 relative overflow-hidden bg-slate-900">
-          {/* Background Image with Overlays */}
           <img 
             src="https://images.unsplash.com/photo-1600185365483-26d7a4cc7519?auto=format&fit=crop&q=80&w=1000" 
             alt="Sneakers Lifestyle" 
@@ -52,7 +65,7 @@ export const Login: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
 
           <div className="relative z-10">
-            <Link to="/" className="text-3xl font-black tracking-tighter text-white hover:text-violet-400 transition-colors">LojaDemo</Link>
+            <Link to="/" className="text-3xl font-black tracking-tighter text-white hover:text-violet-400 transition-colors">{APP_NAME}</Link>
           </div>
 
           <div className="relative z-10 mt-auto mb-8">
@@ -68,13 +81,12 @@ export const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column - Form */}
         <div className="w-full lg:w-1/2 p-8 sm:p-12 md:p-16 flex flex-col justify-center bg-white">
           <div className="w-full max-w-md mx-auto">
             
             <div className="text-center mb-10">
               <div className="lg:hidden flex justify-center mb-6">
-                <Link to="/" className="text-3xl font-black tracking-tighter text-slate-900">LojaDemo</Link>
+                <Link to="/" className="text-3xl font-black tracking-tighter text-slate-900">{APP_NAME}</Link>
               </div>
               <h2 className="text-3xl font-black text-slate-900 mb-2">Bem-vindo de volta</h2>
               <p className="text-slate-500 font-medium">Por favor, faça login na sua conta</p>
@@ -144,7 +156,6 @@ export const Login: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* Botão Google - Fora de Escopo */}
               <div className="relative group" title="Fora do escopo do teste">
                 <div className="absolute inset-0 z-10 cursor-not-allowed rounded-full"></div>
                 <button type="button" tabIndex={-1} className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-slate-50 border border-slate-200 rounded-full font-bold text-slate-400 shadow-sm text-sm opacity-60">
@@ -158,7 +169,6 @@ export const Login: React.FC = () => {
                 </button>
               </div>
 
-              {/* Botão Facebook - Fora de Escopo */}
               <div className="relative group" title="Fora do escopo do teste">
                 <div className="absolute inset-0 z-10 cursor-not-allowed rounded-full"></div>
                 <button type="button" tabIndex={-1} className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-slate-50 border border-slate-200 rounded-full font-bold text-slate-400 shadow-sm text-sm opacity-60">

@@ -2,40 +2,31 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
 import { useToastStore } from '../store/toastStore';
+import { formatPriceFromCents } from '../utils/currency';
 import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, ShieldCheck, Check } from 'lucide-react';
 
 export const Cart: React.FC = () => {
   const navigate = useNavigate();
   const { items, removeItem, updateQuantity, addItem, clearCart } = useCartStore();
   const addToast = useToastStore(state => state.addToast);
-  
-  // Estado para controlar o modal de checkout
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const shipping = subtotal > 0 ? 0 : 0; // Frete grátis simulado
+  const shipping = 0;
   const total = subtotal + shipping;
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
-  };
-
-  // Função que lida com a remoção e dispara o Toast de Desfazer
   const handleRemoveItem = (id: number) => {
     const itemToRemove = items.find(item => item.id === id);
-    
-    if (itemToRemove) {
-      removeItem(id);
-      
-      // Mensagem genérica sem o nome do item, conforme solicitado
-      addToast('Item removido do carrinho', {
-        type: 'info',
-        action: {
-          label: 'Desfazer',
-          onClick: () => addItem(itemToRemove, itemToRemove.quantity)
-        }
-      });
-    }
+    if (!itemToRemove) return;
+
+    removeItem(id);
+    addToast('Item removido do carrinho', {
+      type: 'info',
+      action: {
+        label: 'Desfazer',
+        onClick: () => addItem(itemToRemove, itemToRemove.quantity),
+      },
+    });
   };
 
   const handleFinishCheckout = () => {
@@ -79,7 +70,6 @@ export const Cart: React.FC = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Lista de Produtos */}
           <div className="flex-1 space-y-4">
             {items.map((item) => (
               <div key={item.id} className="bg-white p-4 rounded-[1.5rem] border border-slate-100 shadow-sm flex flex-col sm:flex-row items-center gap-4 md:gap-5 relative group">
@@ -112,7 +102,7 @@ export const Cart: React.FC = () => {
                     {item.name}
                   </Link>
                   <div className="text-lg md:text-xl font-black text-slate-900 mb-3 md:mb-auto">
-                    {formatPrice(item.price)}
+                    {formatPriceFromCents(item.price)}
                   </div>
 
                   <div className="flex items-center justify-between mt-auto">
@@ -134,7 +124,7 @@ export const Cart: React.FC = () => {
                     
                     <div className="text-right hidden sm:block">
                       <p className="text-[10px] md:text-xs text-slate-500 font-medium">Subtotal</p>
-                      <p className="text-sm md:text-base font-bold text-slate-900">{formatPrice(item.price * item.quantity)}</p>
+                      <p className="text-sm md:text-base font-bold text-slate-900">{formatPriceFromCents(item.price * item.quantity)}</p>
                     </div>
                   </div>
                 </div>
@@ -142,7 +132,6 @@ export const Cart: React.FC = () => {
             ))}
           </div>
 
-          {/* Resumo do Pedido */}
           <div className="w-full lg:w-[340px] shrink-0">
             <div className="bg-white p-5 md:p-6 rounded-[1.5rem] border border-slate-100 shadow-lg shadow-slate-200/40 sticky top-24">
               <h3 className="text-lg font-black text-slate-900 mb-5">Resumo do Pedido</h3>
@@ -150,7 +139,7 @@ export const Cart: React.FC = () => {
               <div className="space-y-3 mb-5 text-sm md:text-base">
                 <div className="flex items-center justify-between text-slate-600 font-medium">
                   <span>Subtotal</span>
-                  <span>{formatPrice(subtotal)}</span>
+                  <span>{formatPriceFromCents(subtotal)}</span>
                 </div>
                 <div className="flex items-center justify-between text-slate-600 font-medium">
                   <span>Frete</span>
@@ -158,7 +147,7 @@ export const Cart: React.FC = () => {
                 </div>
                 <div className="border-t border-slate-100 pt-3 mt-3 flex items-center justify-between">
                   <span className="text-base font-bold text-slate-900">Total</span>
-                  <span className="text-2xl font-black text-violet-600">{formatPrice(total)}</span>
+                  <span className="text-2xl font-black text-violet-600">{formatPriceFromCents(total)}</span>
                 </div>
               </div>
 
@@ -178,7 +167,6 @@ export const Cart: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal de Checkout Simulado */}
       {showCheckoutModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-fade-in">
           <div className="bg-white rounded-[2rem] p-6 md:p-8 max-w-md w-full shadow-2xl animate-scale-up relative text-center">

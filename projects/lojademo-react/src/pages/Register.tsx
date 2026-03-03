@@ -2,37 +2,61 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthService } from '../services/AuthService';
 import { RegisterRequest } from '../types';
+import { APP_NAME } from '../config';
+import {
+  calculateStrength,
+  getStrengthColor,
+  getStrengthText,
+  getStrengthTextColor,
+  getStrengthWidth,
+  PASSWORD_MIN_STRENGTH,
+} from '../utils/passwordStrength';
 import { Loader2, AlertCircle, CheckCircle2, Eye, EyeOff, Facebook } from 'lucide-react';
 
 export const Register: React.FC = () => {
   const navigate = useNavigate();
-  
+
   const [formData, setFormData] = useState<RegisterRequest>({ name: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const strengthScore = calculateStrength(formData.password);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (error) setError('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (strengthScore < PASSWORD_MIN_STRENGTH) {
+      setError('Sua senha precisa ser mais forte. Siga as dicas abaixo do campo.');
+      return;
+    }
     setLoading(true);
     setError('');
     setSuccess(false);
 
     try {
       await AuthService.register(formData);
-      
       setSuccess(true);
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
-      
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Falha ao realizar cadastro. Verifique os dados e tente novamente.');
+      setTimeout(() => navigate('/login'), 2000);
+    } catch (err: unknown) {
+      let errorMessage = 'Falha ao realizar cadastro. Verifique os dados e tente novamente.';
+      if (err && typeof err === 'object' && 'response' in err) {
+        const data = (err as { response?: { data?: { message?: string; errors?: Record<string, string[]> } } })
+          .response?.data;
+        if (data?.errors) {
+          const firstKey = Object.keys(data.errors)[0];
+          const firstMsg = firstKey ? data.errors[firstKey]?.[0] : undefined;
+          if (firstMsg) errorMessage = firstMsg;
+        } else if (data?.message) {
+          errorMessage = data.message;
+        }
+      }
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -41,10 +65,7 @@ export const Register: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-4 md:p-8 w-full">
       <div className="max-w-6xl w-full bg-white rounded-[2rem] md:rounded-[3rem] shadow-2xl shadow-slate-200/50 flex overflow-hidden min-h-[650px] border border-slate-100">
-        
-        {/* Left Column - Lifestyle Image (Hidden on Mobile) */}
         <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 relative overflow-hidden bg-slate-900">
-          {/* Background Image with Overlays */}
           <img 
             src="https://images.unsplash.com/photo-1556821840-3a63f95609a7?auto=format&fit=crop&q=80&w=1000" 
             alt="Activewear Lifestyle" 
@@ -53,7 +74,7 @@ export const Register: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
 
           <div className="relative z-10">
-            <Link to="/" className="text-3xl font-black tracking-tighter text-white hover:text-violet-400 transition-colors">LojaDemo</Link>
+            <Link to="/" className="text-3xl font-black tracking-tighter text-white hover:text-violet-400 transition-colors">{APP_NAME}</Link>
           </div>
 
           <div className="relative z-10 mt-auto mb-8">
@@ -69,13 +90,12 @@ export const Register: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column - Form */}
         <div className="w-full lg:w-1/2 p-8 sm:p-12 md:p-16 flex flex-col justify-center bg-white">
           <div className="w-full max-w-md mx-auto">
             
             <div className="text-center mb-8">
               <div className="lg:hidden flex justify-center mb-6">
-                <Link to="/" className="text-3xl font-black tracking-tighter text-slate-900">LojaDemo</Link>
+                <Link to="/" className="text-3xl font-black tracking-tighter text-slate-900">{APP_NAME}</Link>
               </div>
               <h2 className="text-3xl font-black text-slate-900 mb-2">Criar Conta</h2>
               <p className="text-slate-500 font-medium">Preencha os dados para se cadastrar</p>
@@ -128,15 +148,14 @@ export const Register: React.FC = () => {
                 <label className="block text-sm font-bold text-slate-700 mb-1.5 ml-1">Senha</label>
                 <div className="relative">
                   <input
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     name="password"
                     required
                     value={formData.password}
                     onChange={handleChange}
                     disabled={success}
                     className="w-full pl-5 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder-slate-400 focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 transition-all outline-none font-medium disabled:opacity-50"
-                    placeholder="Mínimo 8 caracteres"
-                    minLength={8}
+                    placeholder="Crie uma senha forte"
                   />
                   <button
                     type="button"
@@ -147,6 +166,26 @@ export const Register: React.FC = () => {
                     {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                {formData.password.length > 0 && (
+                  <div className="mt-3 px-1">
+                    <div className="flex justify-between items-center mb-1.5">
+                      <span className="text-xs font-bold text-slate-500">Força da senha</span>
+                      <span className={`text-xs font-black ${getStrengthTextColor(strengthScore)}`}>
+                        {getStrengthText(strengthScore)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden flex">
+                      <div
+                        className={`h-full ${getStrengthWidth(strengthScore)} ${getStrengthColor(strengthScore)} transition-all duration-500 ease-out rounded-full`}
+                      />
+                    </div>
+                    {strengthScore < PASSWORD_MIN_STRENGTH && (
+                      <p className="text-[11px] text-slate-400 mt-2 font-medium leading-relaxed">
+                        Use pelo menos 8 caracteres, incluindo letras maiúsculas, minúsculas, números e símbolos.
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <button
@@ -165,7 +204,6 @@ export const Register: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* Botão Google - Fora de Escopo */}
               <div className="relative group" title="Fora do escopo do teste">
                 <div className="absolute inset-0 z-10 cursor-not-allowed rounded-full"></div>
                 <button type="button" tabIndex={-1} className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-slate-50 border border-slate-200 rounded-full font-bold text-slate-400 shadow-sm text-sm opacity-60">
@@ -179,7 +217,6 @@ export const Register: React.FC = () => {
                 </button>
               </div>
 
-              {/* Botão Facebook - Fora de Escopo */}
               <div className="relative group" title="Fora do escopo do teste">
                 <div className="absolute inset-0 z-10 cursor-not-allowed rounded-full"></div>
                 <button type="button" tabIndex={-1} className="w-full flex items-center justify-center gap-2 py-3.5 px-4 bg-slate-50 border border-slate-200 rounded-full font-bold text-slate-400 shadow-sm text-sm opacity-60">

@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
@@ -13,7 +12,6 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Rotas COM Navbar e Footer (Layout Principal) */}
         <Route element={<Layout />}>
           <Route path="/" element={<Home />} />
           <Route path="/product/:id" element={<ProductDetails />} />
@@ -22,7 +20,6 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Route>
 
-        {/* Rotas SEM Navbar e Footer (Telas de Autenticação) */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
       </Routes>
