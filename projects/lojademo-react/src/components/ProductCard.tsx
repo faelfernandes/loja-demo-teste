@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../types';
+import { formatBRL, formatPriceFromCents } from '../utils/currency';
 import { Heart, ShoppingBasket, Check, Star } from 'lucide-react';
 import { useCartStore } from '../store/cartStore';
 import { useToastStore } from '../store/toastStore';
@@ -12,14 +13,13 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const addItem = useCartStore(state => state.addItem);
   const addToast = useToastStore(state => state.addToast);
-  
+
   const [isAdded, setIsAdded] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
 
-  const formattedPrice = new Intl.NumberFormat('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  }).format(product.price);
+  const priceReais = product.price / 100;
+  const formattedPrice = formatPriceFromCents(product.price);
+  const priceBeforeDiscount = formatBRL(priceReais * 1.2);
 
   const imageUrl = product.image_url || `https://placehold.co/600x600/f8f9fa/a1a1aa?text=${encodeURIComponent(product.name)}`;
 
@@ -27,8 +27,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.preventDefault();
     addItem(product, 1);
     setIsAdded(true);
-    
-    // Dispara o Toast Global
     addToast(`${product.name} adicionado ao carrinho!`);
     
     setTimeout(() => setIsAdded(false), 2000);
@@ -50,7 +48,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <Heart className={`h-4 w-4 md:h-5 md:w-5 transition-colors ${isFavorite ? 'fill-violet-600 text-violet-600' : 'text-slate-400'}`} />
         </button>
 
-        {/* Correção Definitiva: Adicionado -webkit-mask-image para forçar o recorte das bordas no Chrome/Safari */}
         <div className="relative aspect-square w-full mb-3 md:mb-5 rounded-xl md:rounded-3xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center group-hover:shadow-inner transition-all isolate transform-gpu [-webkit-mask-image:-webkit-radial-gradient(white,black)]">
           <img 
             src={imageUrl} 
@@ -60,7 +57,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/f8f9fa/a1a1aa?text=Sem+Imagem';
             }}
           />
-          {product.rating > 4.7 && (
+          {typeof product.rating === 'number' && product.rating > 4.7 && (
             <div className="absolute bottom-2 left-2 md:bottom-4 md:left-4 bg-white/90 backdrop-blur-sm px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold text-slate-800 shadow-sm">
               Mais Vendido
             </div>
@@ -72,20 +69,31 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             <span className="text-[10px] md:text-xs font-bold text-violet-600 uppercase tracking-wider truncate">
               {product.category?.name}
             </span>
-            <div className="flex items-center gap-1 text-amber-400 shrink-0">
-              <Star className="h-3 w-3 md:h-3.5 md:w-3.5 fill-current" />
-              <span className="text-[10px] md:text-xs font-bold text-slate-700">{product.rating}</span>
-            </div>
+            {(product.rating != null || product.reviews != null) && (
+              <div className="flex items-center gap-1 text-amber-400 shrink-0">
+                <Star className="h-3 w-3 md:h-3.5 md:w-3.5 fill-current" />
+                <span className="text-[10px] md:text-xs font-bold text-slate-700">
+                  {product.rating ?? '—'}
+                  {product.reviews != null && (
+                    <span className="text-slate-400 font-normal ml-0.5">({product.reviews})</span>
+                  )}
+                </span>
+              </div>
+            )}
           </div>
 
-          <h3 className="text-sm md:text-lg font-bold text-slate-900 line-clamp-2 mb-3 md:mb-4 group-hover:text-violet-600 transition-colors leading-tight break-words">
+          <h3 className="text-sm md:text-lg font-bold text-slate-900 line-clamp-2 mb-1.5 group-hover:text-violet-600 transition-colors leading-tight break-words">
             {product.name}
           </h3>
-          
+          {product.description && (
+            <p className="text-xs md:text-sm text-slate-500 line-clamp-2 mb-3 md:mb-4 leading-snug">
+              {product.description}
+            </p>
+          )}
           <div className="mt-auto flex items-center justify-between gap-2">
             <div className="flex flex-col min-w-0">
               <span className="text-[10px] md:text-xs text-slate-400 line-through decoration-slate-300 truncate">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(product.price * 1.2)}
+                {priceBeforeDiscount}
               </span>
               <span className="font-black text-base md:text-xl text-slate-900 truncate">{formattedPrice}</span>
             </div>

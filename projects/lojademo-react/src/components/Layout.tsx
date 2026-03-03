@@ -2,14 +2,14 @@ import React from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { Navbar } from './Navbar';
 import { Toast } from './ui/Toast';
+import { APP_NAME } from '../config';
 import { Facebook, Instagram, Twitter, Mail, Phone, MapPin, Github, Linkedin } from 'lucide-react';
 
 export const Layout: React.FC = () => {
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col font-sans selection:bg-violet-200 selection:text-violet-900">
       <Navbar />
-      
-      {/* min-w-0 e w-full garantem que o main não expanda além da tela */}
+
       <main className="flex-grow flex flex-col w-full min-w-0">
         <Outlet />
       </main>
@@ -19,7 +19,7 @@ export const Layout: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
             
             <div className="space-y-4">
-              <span className="text-3xl font-black tracking-tighter text-slate-900 mb-2 block">LojaDemo</span>
+              <span className="text-3xl font-black tracking-tighter text-slate-900 mb-2 block">{APP_NAME}</span>
               <p className="text-slate-500 text-sm leading-relaxed">
                 A sua loja definitiva para moda e esportes. Encontre os melhores tênis, roupas e acessórios com preços imbatíveis e entrega rápida.
               </p>
@@ -73,13 +73,10 @@ export const Layout: React.FC = () => {
           </div>
 
           <div className="border-t border-slate-100 pt-8 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-4">
-            
-            {/* Seção de Copyright */}
             <div className="text-slate-500 text-sm text-center md:text-left font-medium">
-              &copy; {new Date().getFullYear()} LojaDemo Marketplace. Todos os direitos reservados.
+              &copy; {new Date().getFullYear()} {APP_NAME} Marketplace. Todos os direitos reservados.
             </div>
-            
-            {/* Créditos do Desenvolvedor (No lugar dos métodos de pagamento) */}
+
             <div className="flex items-center gap-2 text-sm text-slate-500 shrink-0">
               <span>Desenvolvido por <span className="font-bold text-slate-800">Rafael Fernandes</span></span>
               <span className="text-slate-300">•</span>
@@ -109,7 +106,6 @@ export const Layout: React.FC = () => {
         </div>
       </footer>
 
-      {/* Componente Global de Toasts */}
       <Toast />
     </div>
   );

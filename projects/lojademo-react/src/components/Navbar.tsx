@@ -4,20 +4,17 @@ import { ShoppingBasket, User, Settings, LogOut, ChevronDown } from 'lucide-reac
 import { useAuthStore } from '../store/authStore';
 import { useCartStore } from '../store/cartStore';
 import { SearchBar } from './SearchBar';
+import { APP_NAME } from '../config';
 
 export const Navbar: React.FC = () => {
   const { isAuthenticated, user, logout } = useAuthStore();
   const totalCartItems = useCartStore((state) => state.getTotalItems());
   const navigate = useNavigate();
 
-  // Estados e Refs para o Dropdown
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Pega apenas o primeiro nome do usuário
   const firstName = user?.name ? user.name.split(' ')[0] : 'Usuário';
 
-  // Fecha o dropdown ao clicar fora dele
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -39,18 +36,15 @@ export const Navbar: React.FC = () => {
     <nav className="bg-white sticky top-0 z-50 border-b border-slate-100 shadow-sm">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20 gap-4 md:gap-8">
-          
-          {/* Logo */}
-          <Link to="/" className="flex-shrink-0 flex items-center gap-2">
-            <span className="text-2xl md:text-3xl font-black tracking-tighter text-slate-900">LojaDemo</span>
+          <Link to="/" className="flex-shrink-0 flex items-center gap-2" aria-label={`${APP_NAME} - início`}>
+            <img src="/favicon-32x32.png" alt={APP_NAME} className="h-8 w-8 md:h-10 md:w-10" />
+            <span className="text-2xl md:text-3xl font-black tracking-tighter text-slate-900">{APP_NAME}</span>
           </Link>
 
-          {/* Search Bar (Desktop) */}
           <div className="hidden md:flex flex-1 max-w-2xl">
             <SearchBar />
           </div>
 
-          {/* Actions */}
           <div className="flex items-center gap-3 md:gap-6">
             <button onClick={() => navigate('/cart')} className="flex items-center gap-2 text-slate-600 hover:text-violet-600 transition-colors font-medium text-sm relative group">
               <div className="relative p-2 bg-slate-100 rounded-full group-hover:bg-violet-50 transition-colors">
@@ -81,7 +75,6 @@ export const Navbar: React.FC = () => {
                   </div>
                 </button>
 
-                {/* Dropdown Menu */}
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 animate-scale-up origin-top-right z-50">
                     <div className="px-4 py-3 border-b border-slate-100 sm:hidden">
@@ -116,7 +109,6 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Search Bar (Mobile) */}
         <div className="md:hidden pb-4">
           <SearchBar />
         </div>

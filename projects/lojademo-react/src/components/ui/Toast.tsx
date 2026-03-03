@@ -19,8 +19,7 @@ export const Toast: React.FC = () => {
           )}
           
           <p className="text-sm font-bold text-white flex-1 pr-2">{toast.message}</p>
-          
-          {/* Botão de Ação (Desfazer) */}
+
           {toast.action && (
             <button 
               onClick={() => {

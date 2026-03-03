@@ -2,12 +2,14 @@ import React from 'react';
 import { Category } from '../types';
 import { useSearchParams } from 'react-router-dom';
 import { Check } from 'lucide-react';
+import { Skeleton } from './ui/Skeleton';
 
 interface FiltersSidebarProps {
   categories: Category[];
+  loadingCategories?: boolean;
 }
 
-export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({ categories }) => {
+export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({ categories, loadingCategories = false }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const currentCategory = searchParams.get('category');
 
@@ -23,44 +25,50 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({ categories }) =>
 
   return (
     <aside className="w-full lg:w-64 flex-shrink-0 space-y-8">
-      {/* Categorias Funcionais */}
       <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm">
         <h3 className="text-lg font-black text-slate-900 mb-4">Categorias</h3>
-        <ul className="space-y-1">
-          <li>
-            <button
-              onClick={() => handleCategoryClick(null)}
-              className={`w-full text-left px-4 py-2.5 rounded-xl transition-all text-sm font-bold ${
-                !currentCategory ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-              }`}
-            >
-              Todos os Produtos
-            </button>
-          </li>
-          {categories.map((category) => (
-            <li key={category.id}>
+        {loadingCategories ? (
+          <ul className="space-y-1">
+            <li><Skeleton className="h-10 w-full rounded-xl" /></li>
+            {['cat-1', 'cat-2', 'cat-3', 'cat-4'].map((id) => (
+              <li key={id}><Skeleton className="h-10 w-full rounded-xl" /></li>
+            ))}
+          </ul>
+        ) : (
+          <ul className="space-y-1">
+            <li>
               <button
-                onClick={() => handleCategoryClick(category.id)}
+                onClick={() => handleCategoryClick(null)}
                 className={`w-full text-left px-4 py-2.5 rounded-xl transition-all text-sm font-bold ${
-                  currentCategory === category.id.toString() ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  !currentCategory ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
-                {category.name}
+                Todos os Produtos
               </button>
             </li>
-          ))}
-        </ul>
+            {categories.map((category) => (
+              <li key={category.id}>
+                <button
+                  onClick={() => handleCategoryClick(category.id)}
+                  className={`w-full text-left px-4 py-2.5 rounded-xl transition-all text-sm font-bold ${
+                    currentCategory === category.id.toString() ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                >
+                  {category.name}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      {/* Placeholder: Preço */}
       <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm opacity-70 relative group">
         <div className="absolute inset-0 z-10 cursor-not-allowed" title="Fora do escopo do teste"></div>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-black text-slate-900">Faixa de Preço</h3>
           <span className="text-[9px] uppercase font-bold tracking-wider text-violet-600 bg-violet-50 px-2 py-1 rounded-md text-center leading-tight">Fora do escopo</span>
         </div>
-        
-        {/* Mock Visual do Slider */}
+
         <div className="h-12 w-full flex items-end gap-1 mb-2">
            {[20, 40, 80, 100, 60, 40, 30, 20, 10].map((h, i) => (
              <div key={i} className="flex-1 bg-slate-200 rounded-t-sm" style={{ height: `${h}%` }}></div>
@@ -77,7 +85,6 @@ export const FiltersSidebar: React.FC<FiltersSidebarProps> = ({ categories }) =>
         </div>
       </div>
 
-      {/* Placeholder: Brand (Sports/Fashion) */}
       <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm opacity-70 relative">
         <div className="absolute inset-0 z-10 cursor-not-allowed" title="Fora do escopo do teste"></div>
         <div className="flex items-center justify-between mb-4">
