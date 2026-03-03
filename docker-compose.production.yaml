@@ -39,7 +39,7 @@ services:
       dockerfile: Dockerfile.production
     restart: always
     environment:
-      VITE_API_BASE_URL: https://api-lojademo.rfconsultoria.com.br/api
+      VITE_API_BASE_URL: https://api-lojademo.rfconsultoria.com.br
 
 volumes:
   dbdata:
