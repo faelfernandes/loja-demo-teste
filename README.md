@@ -65,7 +65,7 @@ Variáveis utilizadas pelo `docker-compose`:
 
 | Variável        | Descrição           | Padrão        |
 |-----------------|---------------------|---------------|
-| `DB_ROOT_PASSWORD` | Senha root do MySQL | `rootpassword` |
+| `MYSQL_ROOT_PASSWORD` | Senha root do MySQL | `rootpassword` |
 | `DB_DATABASE`   | Nome do banco       | `lojademo_db`  |
 | `DB_USERNAME`   | Usuário do app      | `lojademo_user` |
 | `DB_PASSWORD`   | Senha do usuário    | `lojademo_pass` |

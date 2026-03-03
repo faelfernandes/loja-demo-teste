@@ -1,0 +1,16 @@
+FROM composer:2 AS composer
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --optimize-autoloader
+
+FROM php:8.4-fpm AS app
+WORKDIR /var/www/html
+
+COPY --from=composer /app/vendor ./vendor
+
+COPY . .
+
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+EXPOSE 8081
+CMD ["php", "artisan", "octane:start", "--server=road-runner", "--host=0.0.0.0", "--port=8081"]
