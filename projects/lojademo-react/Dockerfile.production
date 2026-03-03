@@ -16,4 +16,5 @@ WORKDIR /app
 RUN npm install -g serve
 COPY --from=builder /app/dist ./dist
 EXPOSE 3000
-CMD ["serve", "-s", "dist", "-l", "3000"]
+# exec para serve ser PID 1 e não sair ao perder stdin (ex.: compose up)
+CMD ["sh", "-c", "exec serve -s dist -l 3000"]
