@@ -57,6 +57,19 @@ services:
       timeout: 10s
       retries: 5
       start_period: 90s
+    networks:
+      - default
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lojademo-api.rule=Host(`api-lojademo.rfsolucoes.com.br`)"
+      - "traefik.http.routers.lojademo-api.entrypoints=websecure"
+      - "traefik.http.routers.lojademo-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.lojademo-api.loadbalancer.server.port=8081"
+      - "traefik.http.routers.lojademo-api-http.rule=Host(`api-lojademo.rfsolucoes.com.br`)"
+      - "traefik.http.routers.lojademo-api-http.entrypoints=web"
+      - "traefik.http.routers.lojademo-api-http.middlewares=redirect-https"
+      - "traefik.http.middlewares.redirect-https.redirectscheme.scheme=https"
 
   lojademo-react:
     build:
@@ -75,6 +88,22 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - default
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lojademo.rule=Host(`lojademo.rfsolucoes.com.br`)"
+      - "traefik.http.routers.lojademo.entrypoints=websecure"
+      - "traefik.http.routers.lojademo.tls.certresolver=letsencrypt"
+      - "traefik.http.services.lojademo.loadbalancer.server.port=3000"
+      - "traefik.http.routers.lojademo-http.rule=Host(`lojademo.rfsolucoes.com.br`)"
+      - "traefik.http.routers.lojademo-http.entrypoints=web"
+      - "traefik.http.routers.lojademo-http.middlewares=redirect-https"
+
+networks:
+  coolify:
+    external: true
 
 volumes:
   mysql_data:
