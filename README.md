@@ -25,6 +25,12 @@
 
 HTTPS via Let's Encrypt + Traefik, provisionado automaticamente pelo [Coolify](https://coolify.io).
 
+### Demonstração
+
+| Tela inicial | Login | Carrinho |
+|--------------|-------|----------|
+| ![Home](home.gif) | ![Login](login.gif) | ![Carrinho](carrinho.gif) |
+
 ---
 
 ## Funcionalidades
@@ -216,6 +222,23 @@ O projeto está estruturado como um **monolito modular** — abordagem adequada 
 | Jobs assíncronos | Laravel Queue já instalado (tabela `jobs` criada); basta adicionar worker + Redis driver |
 
 > O padrão Repository garante que trocar a camada de dados (MySQL → Redis para cache, FULLTEXT → Meilisearch) não impacta controllers nem services.
+
+---
+
+## Testes
+
+O backend possui **51 testes** automatizados (PHPUnit), cobrindo API, modelos e serviços.
+
+- **Feature:** Auth (registro, login, logout, alteração de senha), Products (CRUD, listagem com filtros e busca, validações), Categories (CRUD e validações).
+- **Unit:** Models `Product` e `Category` (relacionamentos, atributos, preço promocional), `ProductService` e `CategoryService` (conversão de preço, delegação ao repositório).
+
+Para rodar os testes (com Docker):
+
+```bash
+docker compose exec lojademo-service php artisan test
+```
+
+Os testes usam SQLite em memória (configurado em `phpunit.xml`); não é necessário banco MySQL rodando apenas para a suíte de testes.
 
 ---
 
