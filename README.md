@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" alt="LojaDemo" width="120" />
+</p>
+
 # LojaDemo
 
 Catálogo de e-commerce com autenticação: listagem de produtos, filtro por categoria, busca e detalhes de produto. Backend em Laravel, frontend em React, banco MySQL e ambiente containerizado com Docker.
@@ -44,7 +48,6 @@ lojademo/
 ## Pré-requisitos
 
 - [Docker](https://docs.docker.com/get-docker/) e [Docker Compose](https://docs.docker.com/compose/install/)
-- (Opcional) Node.js 20+ e PHP 8.4+ para desenvolvimento local
 
 ---
 
@@ -139,36 +142,6 @@ Em `projects/lojademo-react`:
 | `DELETE` | `/api/categories/{id}` | Remover categoria |
 
 Requisições protegidas devem enviar o header: `Authorization: Bearer {token}`.
-
----
-
-## Desenvolvimento local (sem Docker)
-
-### Backend (Laravel)
-
-```bash
-cd projects/lojademo-service
-cp .env.example .env
-composer install
-php artisan key:generate
-# Configurar .env com MySQL (host 127.0.0.1, etc.)
-php artisan migrate --seed
-php artisan serve
-```
-
-API em http://localhost:8000.
-
-### Frontend (React)
-
-```bash
-cd projects/lojademo-react
-cp .env.example .env
-# Ajustar VITE_API_BASE_URL para http://localhost:8000/api
-npm install
-npm run dev
-```
-
-App em http://localhost:5173 (ou porta indicada pelo Vite).
 
 ---
 
