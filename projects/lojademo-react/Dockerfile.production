@@ -5,8 +5,6 @@ ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
 COPY package*.json ./
-# npm install: resolve deps no build (evita falha quando lock não está em sync no repo)
-# Build precisa de devDependencies (vite); --only=production quebraria npm run build
 RUN npm install
 
 COPY . .
