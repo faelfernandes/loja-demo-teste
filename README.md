@@ -1,68 +1,203 @@
-# Lojademo – Catálogo de E-commerce
+# LojaDemo
 
-Catálogo de produtos com autenticação: **Laravel** (API REST), **React** (frontend) e **MySQL**, orquestrado com **Docker**.
+Catálogo de e-commerce com autenticação: listagem de produtos, filtro por categoria, busca e detalhes de produto. Backend em Laravel, frontend em React, banco MySQL e ambiente containerizado com Docker.
 
-## Requisitos
+---
 
-- Docker e Docker Compose
-- (Opcional) Make
+## Stack
 
-## Como rodar
+| Camada      | Tecnologia |
+|------------|------------|
+| Backend    | Laravel 12, PHP 8.4, Laravel Sanctum |
+| Frontend   | React 19, TypeScript, Vite 6, Tailwind CSS, Zustand, React Router |
+| Banco      | MySQL 8.0 |
+| Infra      | Docker, Docker Compose |
+
+A API segue os padrões **Service** e **Repository** e utiliza **API Resources** para respostas padronizadas.
+
+---
+
+## Estrutura do repositório
+
+```
+lojademo/
+├── docker-compose.yml          # Orquestração dos serviços
+├── .env.example                # Variáveis do MySQL (raiz)
+└── projects/
+    ├── lojademo-service/       # API Laravel
+    │   ├── app/
+    │   │   ├── Http/Controllers/Api/
+    │   │   ├── Http/Resources/  # Response collection
+    │   │   ├── Repositories/
+    │   │   └── Services/
+    │   └── database/migrations/
+    └── lojademo-react/         # SPA React
+        └── src/
+            ├── components/
+            ├── pages/
+            ├── services/
+            └── store/
+```
+
+---
+
+## Pré-requisitos
+
+- [Docker](https://docs.docker.com/get-docker/) e [Docker Compose](https://docs.docker.com/compose/install/)
+- (Opcional) Node.js 20+ e PHP 8.4+ para desenvolvimento local
+
+---
+
+## Execução com Docker
 
 ### 1. Variáveis de ambiente
 
-Na raiz do projeto, crie um `.env` a partir do exemplo:
+Na raiz do projeto, crie um `.env` (ou use os valores padrão do `.env.example`):
 
 ```bash
 cp .env.example .env
 ```
 
-Ajuste senhas e nomes do banco se quiser (valores padrão já funcionam para desenvolvimento).
+Variáveis utilizadas pelo `docker-compose`:
 
-### 2. Subir os containers
+| Variável        | Descrição           | Padrão        |
+|-----------------|---------------------|---------------|
+| `DB_ROOT_PASSWORD` | Senha root do MySQL | `rootpassword` |
+| `DB_DATABASE`   | Nome do banco       | `lojademo_db`  |
+| `DB_USERNAME`   | Usuário do app      | `lojademo_user` |
+| `DB_PASSWORD`   | Senha do usuário    | `lojademo_pass` |
+
+### 2. Subir os serviços
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
 
-Ou, com Make:
+Isso sobe:
+
+- **MySQL** na porta `3306` (com healthcheck)
+- **lojademo-service** (Laravel) na porta `8000`
+- **lojademo-react** (Vite) na porta `3000`
+
+### 3. Configurar o backend (primeira vez)
+
+Garanta que exista `projects/lojademo-service/.env` (copie de `.env.example`). Depois suba os containers e rode:
 
 ```bash
-make up
+docker compose up -d
+docker compose exec lojademo-service php artisan key:generate
+docker compose exec lojademo-service php artisan migrate --force
+docker compose exec lojademo-service php artisan db:seed --force
 ```
 
-Na primeira execução o backend irá:
+> [!NOTE]
+> O `docker-compose` sobrescreve `DB_HOST`, `DB_DATABASE`, `DB_USERNAME` e `DB_PASSWORD` no container; o restante vem do `.env` do serviço. O `key:generate` persiste no `.env` do host via volume.
 
-- Instalar dependências (Composer)
-- Gerar `APP_KEY`
-- Rodar migrations
-- Rodar seeders (categorias e produtos)
+### 4. Acessar a aplicação
 
-### 3. Acessar
+- **Frontend:** http://localhost:3000  
+- **API:** http://localhost:8000  
 
-| Serviço        | URL                    |
-|----------------|------------------------|
-| **Frontend**   | http://localhost:3000  |
-| **API Laravel**| http://localhost:8000  |
+O frontend espera a API em `http://localhost:8000/api`. Em `projects/lojademo-react` configure `VITE_API_BASE_URL` (ou `.env`) se usar outra URL.
 
-### Endpoints da API
+---
 
-- **Produtos:** `GET /api/products` (paginação, `?category={id}`, `?search={query}`), `GET /api/products/{id}`
-- **Categorias:** `GET /api/categories`
-- **Auth:** `POST /api/login`, `POST /api/register`; endpoints de criação/edição/exclusão protegidos com `auth:sanctum`
+## Variáveis do frontend (React)
 
-## Comandos úteis (Make)
+Em `projects/lojademo-react`:
 
-- `make up` – sobe os containers
-- `make upd` – sobe em background
-- `make down` – para e remove containers
-- `make migrate` – roda migrations no backend
-- `make seed` – roda seeders
-- `make test` – testes do Laravel
+| Variável              | Descrição                    | Exemplo                    |
+|-----------------------|-----------------------------|----------------------------|
+| `VITE_APP_NAME`       | Nome exibido na aplicação   | `LojaDemo`                 |
+| `VITE_API_BASE_URL`   | Base URL da API             | `http://localhost:8000/api` |
 
-## Estrutura
+---
 
-- `projects/lojademo-service` – API Laravel (Service + Repository, Sanctum, response collection)
-- `projects/lojademo-react` – frontend React (listagem, filtros, busca, auth)
-- `infra/` – configuração MySQL (init opcional)
-- `docker-compose.yml` – orquestração (MySQL, backend, frontend)
+## API – Endpoints
+
+### Públicos
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/api/login` | Login (retorna token Sanctum) |
+| `POST` | `/api/register` | Registro de usuário |
+| `GET`  | `/api/products` | Listar produtos (paginação, `?category={id}`, `?search={query}`) |
+| `GET`  | `/api/products/{id}` | Detalhes do produto |
+| `GET`  | `/api/categories` | Listar categorias |
+
+### Protegidos (auth:sanctum)
+
+| Método | Endpoint | Descrição |
+|--------|----------|-----------|
+| `POST` | `/api/logout` | Encerrar sessão |
+| `PUT`  | `/api/user/password` | Alterar senha |
+| `POST` | `/api/products` | Criar produto |
+| `PUT`  | `/api/products/{id}` | Atualizar produto |
+| `DELETE` | `/api/products/{id}` | Remover produto |
+| `POST` | `/api/categories` | Criar categoria |
+| `PUT`  | `/api/categories/{id}` | Atualizar categoria |
+| `DELETE` | `/api/categories/{id}` | Remover categoria |
+
+Requisições protegidas devem enviar o header: `Authorization: Bearer {token}`.
+
+---
+
+## Desenvolvimento local (sem Docker)
+
+### Backend (Laravel)
+
+```bash
+cd projects/lojademo-service
+cp .env.example .env
+composer install
+php artisan key:generate
+# Configurar .env com MySQL (host 127.0.0.1, etc.)
+php artisan migrate --seed
+php artisan serve
+```
+
+API em http://localhost:8000.
+
+### Frontend (React)
+
+```bash
+cd projects/lojademo-react
+cp .env.example .env
+# Ajustar VITE_API_BASE_URL para http://localhost:8000/api
+npm install
+npm run dev
+```
+
+App em http://localhost:5173 (ou porta indicada pelo Vite).
+
+---
+
+## Banco de dados
+
+- **Produtos:** `id`, `name`, `description`, `price`, `category_id`, `image_url`, `created_at`, `updated_at`
+- **Categorias:** `id`, `name`, `created_at`, `updated_at`
+- **Usuários:** `id`, `name`, `email`, `password`, `created_at`, `updated_at`
+
+Cadastro de usuário exige e-mail único e senha forte; autenticação é por token (Laravel Sanctum).
+
+---
+
+## Comandos úteis
+
+```bash
+# Logs do backend
+docker compose logs -f lojademo-service
+
+# Logs do frontend
+docker compose logs -f lojademo-react
+
+# Parar todos os serviços
+docker compose down
+
+# Parar e remover volumes (apaga dados do MySQL)
+docker compose down -v
+```
+
+---
+
+Este projeto foi desenvolvido como catálogo de e-commerce com autenticação, seguindo os requisitos de backend (Laravel + MySQL + Sanctum), frontend (React + UI), padrões Service/Repository, response collection e Docker descritos no escopo.
