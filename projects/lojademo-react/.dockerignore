@@ -1,0 +1,38 @@
+# Git e IDE
+.git
+.gitignore
+.idea
+.vscode
+*.swp
+*.swo
+
+# Dependências (reinstaladas no build)
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build local (gerado no container)
+dist
+dist-ssr
+*.local
+
+# Env (não subir segredos; build args definem VITE_*)
+.env
+.env.*
+!.env.example
+
+# Cache e logs
+.eslintcache
+*.log
+.vite
+
+# Testes e docs (reduz contexto de build)
+coverage
+*.md
+
+# Outros
+Dockerfile*
+docker-compose*
+.dockerignore
