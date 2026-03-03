@@ -97,7 +97,7 @@ Assim o build do React já sai com a URL certa.
 ## 6. Primeiro deploy
 
 1. Salve as variáveis e inicie o **Deploy**.
-2. Aguarde o build dos dois serviços e o healthcheck do MySQL.
+2. O **primeiro build** pode levar **5–10 minutos** (o backend compila extensões PHP). Aguarde o build dos dois serviços e o healthcheck do MySQL.
 3. O backend roda `migrate` na subida; **não** roda `db:seed` (evite seed em produção).
 4. Para popular dados iniciais (categorias/produtos), use uma vez no container do backend, por exemplo:
 
@@ -122,6 +122,12 @@ Volumes persistentes: `mysql_data`, `service_storage` (logs e arquivos do Larave
 ---
 
 ## 8. Problemas comuns
+
+- **Build falha com exit 255 (comando interrompido durante o build)**  
+  O build do backend compila extensões PHP (pdo_mysql, mbstring, gd, zip, etc.) e pode levar **5–10 minutos** no primeiro deploy. Se o build for interrompido no meio (por exemplo ao terminar de compilar extensões), é provável **timeout de build** no Coolify. Soluções:
+  - Aumentar o **timeout de build** do recurso no Coolify (se a interface permitir; em alguns casos em **Advanced** ou nas configurações do servidor).
+  - Manter **Include Source Commit in Build** desativado para aproveitar cache entre deploys e evitar rebuild completo.
+  - No primeiro deploy, aguardar até ~10 minutos; em máquinas lentas ou com pouca memória o build pode demorar mais.
 
 - **"No Available Server" ou healthcheck falhando**  
   Verifique se o container do backend está saudável (por exemplo `docker ps` no servidor). O healthcheck usa `GET /up` (rota padrão do Laravel em `bootstrap/app.php`); se não responder 200, o Coolify pode marcar o serviço como indisponível.
