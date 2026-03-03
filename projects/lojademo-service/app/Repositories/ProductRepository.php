@@ -16,14 +16,28 @@ class ProductRepository implements ProductRepositoryInterface
             $query->where('category_id', $categoryId);
         }
 
-        if ($search !== null && $search !== '') {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
-            });
+        $search = $search !== null ? trim($search) : '';
+        if ($search !== '') {
+            $this->applySearch($query, $search);
         }
 
         return $query->orderBy('name')->paginate($perPage);
+    }
+
+    private function applySearch(\Illuminate\Database\Eloquent\Builder $query, string $search): void
+    {
+        $minLengthForFulltext = 4;
+
+        if (strlen($search) >= $minLengthForFulltext) {
+            $query->whereFullText(['name', 'description'], $search);
+            return;
+        }
+
+        $like = '%' . addcslashes($search, '%_\\') . '%';
+        $query->where(function ($q) use ($like) {
+            $q->where('name', 'like', $like)
+                ->orWhere('description', 'like', $like);
+        });
     }
 
     public function find(int $id): ?Product

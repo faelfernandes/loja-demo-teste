@@ -3,7 +3,6 @@
 namespace App\Repositories\Contracts;
 
 use App\Models\Category;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 interface CategoryRepositoryInterface
