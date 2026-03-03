@@ -19,16 +19,22 @@ class ProductService
 
     public function find(int $id): ?Product
     {
-        return $this->productRepository->find($id);
+        return $this->productRepository->find($id)?->loadMissing('category');
     }
 
     public function create(array $data): Product
     {
+        $data['price'] = (int) round(($data['price'] ?? 0) * 100);
+
         return $this->productRepository->create($data);
     }
 
     public function update(Product $product, array $data): Product
     {
+        if (isset($data['price'])) {
+            $data['price'] = (int) round($data['price'] * 100);
+        }
+
         return $this->productRepository->update($product, $data);
     }
 
