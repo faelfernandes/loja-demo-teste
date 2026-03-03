@@ -344,4 +344,4 @@ Parâmetros de listagem de produtos: `?page=1&per_page=15&category_id=2&search=t
 
 ## Autor
 
-Feito por **Fael Fernandes** — [GitHub](https://github.com/faelfernandes)
+Feito por **Fael Fernandes** — [Site](https://rafaelfernandes.me/) · [LinkedIn](https://www.linkedin.com/in/rafaelfernandes) · [GitHub](https://github.com/faelfernandes)
