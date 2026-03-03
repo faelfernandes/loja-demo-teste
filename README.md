@@ -4,173 +4,344 @@
 
 # LojaDemo
 
-Catálogo de e-commerce com autenticação: listagem de produtos, filtro por categoria, busca e detalhes de produto. Backend em Laravel, frontend em React, banco MySQL e ambiente containerizado com Docker.
+> E-commerce fullstack com React 19, Laravel 12 e MySQL 8 — focado em UX, decisões técnicas sólidas e arquitetura pronta para crescer.
+
+[![Frontend](https://img.shields.io/badge/Frontend-lojademo.rfsolucoes.com.br-7c3aed?style=flat-square&logo=react)](https://lojademo.rfsolucoes.com.br)
+[![API](https://img.shields.io/badge/API-api--lojademo.rfsolucoes.com.br-0ea5e9?style=flat-square&logo=laravel)](https://api-lojademo.rfsolucoes.com.br)
+[![PHP](https://img.shields.io/badge/PHP-8.4-777bb3?style=flat-square&logo=php)](https://www.php.net/)
+[![Laravel](https://img.shields.io/badge/Laravel-12-ff2d20?style=flat-square&logo=laravel)](https://laravel.com)
+[![React](https://img.shields.io/badge/React-19-61dafb?style=flat-square&logo=react)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178c6?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ed?style=flat-square&logo=docker)](https://docs.docker.com/compose/)
 
 ---
 
-## Stack
+## Live Demo
 
-| Camada      | Tecnologia |
-|------------|------------|
-| Backend    | Laravel 12, PHP 8.4, Laravel Sanctum |
-| Frontend   | React 19, TypeScript, Vite 6, Tailwind CSS, Zustand, React Router |
-| Banco      | MySQL 8.0 |
-| Infra      | Docker, Docker Compose |
+| Ambiente | URL |
+|----------|-----|
+| Frontend (SPA) | <https://lojademo.rfsolucoes.com.br> |
+| Backend (API) | <https://api-lojademo.rfsolucoes.com.br> |
 
-A API segue os padrões **Service** e **Repository** e utiliza **API Resources** para respostas padronizadas.
+HTTPS via Let's Encrypt + Traefik, provisionado automaticamente pelo [Coolify](https://coolify.io).
 
 ---
 
-## Estrutura do repositório
+## Funcionalidades
+
+- Catálogo de produtos com paginação, filtro por categoria e busca full-text
+- Carrinho de compras persistente (localStorage via Zustand)
+- Autenticação completa: registro, login e alteração de senha (Sanctum)
+- Indicador de força de senha em tempo real (barra de progresso colorida)
+- Desconto promocional calculado no model, exibido no frontend
+- Notificações toast para todas as ações do usuário
+- Layout responsivo, skeleton loaders e transições suaves
+- CRUD de produtos e categorias (autenticado)
+
+---
+
+## Tech Stack
+
+### Frontend
+
+| Biblioteca | Versão | Função |
+|---|---|---|
+| React | 19 | UI |
+| TypeScript | 5.8 | Tipagem estática |
+| Vite | 6 | Build / dev server |
+| Tailwind CSS | 3.4 | Estilização utility-first |
+| Zustand | 5 | Gerenciamento de estado |
+| React Router | 7 | Roteamento client-side |
+| Axios | 1.x | HTTP client |
+| Lucide React | 0.575 | Ícones |
+
+### Backend
+
+| Lib / Serviço | Versão | Função |
+|---|---|---|
+| PHP | 8.4 | Runtime |
+| Laravel | 12 | Framework |
+| Laravel Sanctum | 4.3 | Autenticação SPA |
+| MySQL | 8.0 | Banco de dados |
+
+### Infraestrutura
+
+| Ferramenta | Função |
+|---|---|
+| Docker Compose | Orquestração local e produção |
+| Coolify | PaaS self-hosted (deploy, SSL, proxy) |
+| Traefik | Proxy reverso + Let's Encrypt automático |
+
+---
+
+## Decisões Técnicas
+
+### 1. Zustand ao invés de Context API
+
+O Context API força re-renders em toda a árvore de componentes ao alterar estado. Zustand faz subscrições seletivas: cada componente ouve apenas o slice de estado que usa. Bundle de ~1 KB, zero boilerplate, tipagem TypeScript nativa e middleware `persist` embutido para o carrinho.
+
+```ts
+// Carrinho persistido no localStorage automaticamente
+export const useCartStore = create<CartState>()(
+  persist((set, get) => ({ ... }), { name: 'ecommerce-cart' })
+);
+```
+
+### 2. Indicador de força de senha (gamificação progressiva)
+
+Feedback visual em tempo real durante o cadastro: a barra muda de vermelho → laranja → amarelo → verde conforme a senha ganha complexidade (comprimento, maiúsculas, números, símbolos). O botão de submit fica bloqueado até atingir o nível mínimo, evitando senhas fracas sem mensagem de erro após o envio.
+
+```tsx
+<div className={`h-full ${getStrengthWidth(score)} ${getStrengthColor(score)} transition-all duration-500`} />
+```
+
+### 3. Valores monetários como INT (centavos)
+
+Ponto flutuante não representa valores decimais com precisão exata em binário (`0.1 + 0.2 !== 0.3`). Armazenar preços como inteiro em centavos elimina esse risco completamente.
+
+```php
+// Migration: price INT (centavos)
+$table->unsignedInteger('price'); // 1099 = R$ 10,99
+```
+
+```ts
+// Exibição no frontend
+const format = (cents: number) =>
+  (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+```
+
+### 4. Repository Pattern + Contracts + Interfaces
+
+A camada `Controller → Service → Repository → Eloquent` desacopla regras de negócio do framework. Cada repositório implementa um contrato (interface PHP), o que permite trocar a implementação (ex: cache, outro ORM) sem alterar os serviços ou controllers.
+
+```
+AuthController
+   └── ProductService
+          └── ProductRepositoryInterface ← ProductRepository (Eloquent)
+```
+
+O binding é feito no `AppServiceProvider`:
+
+```php
+$this->app->bind(ProductRepositoryInterface::class, ProductRepository::class);
+```
+
+### 5. Object Calisthenics — early return
+
+Controllers e services retornam cedo quando a condição não é satisfeita, evitando if-else aninhados e reduzindo a complexidade ciclomática.
+
+```php
+public function paginate(...): LengthAwarePaginator
+{
+    $query = Product::query()->with('category');
+
+    if ($categoryId !== null) {
+        $query->where('category_id', $categoryId);
+    }
+
+    $search = $search !== null ? trim($search) : '';
+    if ($search === '') {
+        return $query->orderBy('name')->paginate($perPage);
+    }
+
+    $this->applySearch($query, $search);
+    return $query->orderBy('name')->paginate($perPage);
+}
+```
+
+### 6. Busca full-text + índice composto
+
+Para buscas curtas (< 4 chars) é usado `LIKE`. A partir de 4 caracteres, o MySQL usa o índice FULLTEXT, que é ordens de grandeza mais rápido em tabelas grandes.
+
+```php
+// Migration
+$table->index(['category_id', 'name'], 'idx_products_category_name');
+$table->fullText(['name', 'description'], 'ft_products_name_description');
+```
+
+### 7. Desconto no Model
+
+O desconto de 10% é calculado como atributo virtual (`$appends`) no Eloquent. A constante `DISCOUNT_PERCENT` pode ser facilmente movida para `config/app.php`, `.env` ou até uma tabela de promoções no futuro sem alterar o contrato da API.
+
+```php
+private const DISCOUNT_PERCENT = 10;
+
+public function getPricePromotionalAttribute(): int
+{
+    return (int) round($this->price * (1 - self::DISCOUNT_PERCENT / 100));
+}
+```
+
+### 8. Toast Notifications
+
+Toda ação assíncrona (adicionar ao carrinho, login, erro de rede) dispara um toast via Zustand store dedicado. Isso padroniza o feedback ao usuário sem poluir os componentes com lógica de exibição de mensagem.
+
+---
+
+## Arquitetura
+
+```
+┌─────────────────────────────────────────────────────┐
+│                     CLIENTE                         │
+│           React 19 + Vite (SPA)                     │
+│   Zustand (auth / cart / toast)  React Router       │
+└────────────────────┬────────────────────────────────┘
+                     │ HTTPS (Traefik / Let's Encrypt)
+┌────────────────────▼────────────────────────────────┐
+│                  BACKEND API                        │
+│              Laravel 12 + Sanctum                   │
+│                                                     │
+│  Route → Controller → Service → Repository          │
+│                          ↓                          │
+│                    Eloquent ORM                     │
+└────────────────────┬────────────────────────────────┘
+                     │
+┌────────────────────▼────────────────────────────────┐
+│                  BANCO DE DADOS                     │
+│              MySQL 8.0 (Docker volume)              │
+│   idx: category_id+name   fulltext: name+desc       │
+└─────────────────────────────────────────────────────┘
+```
+
+### Escalabilidade
+
+O projeto está estruturado como um **monolito modular** — abordagem adequada para MVP. A separação de camadas permite escalar cada parte de forma independente quando necessário:
+
+| Necessidade | Estratégia |
+|---|---|
+| Mais tráfego no frontend | CDN (Cloudflare) + assets estáticos em bucket |
+| API sobrecarregada | Réplicas Docker (`--scale lojademo-service=3`) + load balancer no Traefik |
+| Banco lento em leitura | Read replicas MySQL + cache Redis (Cache driver já configurável via `.env`) |
+| Buscas mais complexas | Migração do FULLTEXT para Meilisearch ou Elasticsearch (repositório isola a lógica) |
+| Jobs assíncronos | Laravel Queue já instalado (tabela `jobs` criada); basta adicionar worker + Redis driver |
+
+> O padrão Repository garante que trocar a camada de dados (MySQL → Redis para cache, FULLTEXT → Meilisearch) não impacta controllers nem services.
+
+---
+
+## Estrutura do Projeto
 
 ```
 lojademo/
-├── docker-compose.yaml         # Orquestração dos serviços
-├── .env.example                # Variáveis do MySQL (raiz)
-└── projects/
-    ├── lojademo-service/       # API Laravel
-    │   ├── app/
-    │   │   ├── Http/Controllers/Api/
-    │   │   ├── Http/Resources/  # Response collection
-    │   │   ├── Repositories/
-    │   │   └── Services/
-    │   └── database/migrations/
-    └── lojademo-react/         # SPA React
-        └── src/
-            ├── components/
-            ├── pages/
-            ├── services/
-            └── store/
+├── docker-compose.yaml              # Ambiente de desenvolvimento
+├── docker-compose.production.yaml  # Ambiente de produção (Traefik labels)
+├── .env.example                     # Variáveis de ambiente necessárias
+│
+├── projects/
+│   ├── lojademo-service/            # Backend Laravel 12
+│   │   ├── app/
+│   │   │   ├── Http/Controllers/Api/
+│   │   │   ├── Http/Requests/       # Form Requests (validação)
+│   │   │   ├── Http/Resources/      # API Resources (serialização)
+│   │   │   ├── Models/
+│   │   │   ├── Repositories/        # Repository + Contracts
+│   │   │   └── Services/
+│   │   ├── database/
+│   │   │   ├── migrations/
+│   │   │   └── seeders/
+│   │   ├── Dockerfile               # Dev
+│   │   └── Dockerfile.production    # Produção (multi-stage)
+│   │
+│   └── lojademo-react/              # Frontend React 19
+│       ├── src/
+│       │   ├── components/
+│       │   ├── pages/
+│       │   ├── services/            # Axios (AuthService, ProductService…)
+│       │   ├── store/               # Zustand (auth, cart, toast)
+│       │   ├── types/
+│       │   └── utils/               # passwordStrength, formatCurrency…
+│       ├── Dockerfile               # Dev
+│       └── Dockerfile.production    # Produção (build + serve)
 ```
 
 ---
 
-## Pré-requisitos
+## Quick Start (local)
 
-- [Docker](https://docs.docker.com/get-docker/) e [Docker Compose](https://docs.docker.com/compose/install/)
+**Pré-requisitos:** Docker e Docker Compose
 
----
-
-## Execução com Docker
-
-### 1. Variáveis de ambiente
-
-Na raiz do projeto, crie um `.env` (ou use os valores padrão do `.env.example`):
+Repositório: **[github.com/faelfernandes/loja-demo-teste](https://github.com/faelfernandes/loja-demo-teste)**
 
 ```bash
+# 1. Clone o repositório
+git clone https://github.com/faelfernandes/loja-demo-teste.git
+cd loja-demo-teste
+
+# 2. Variáveis de ambiente (raiz — usadas pelo Docker Compose)
 cp .env.example .env
+# Opcional: edite .env com senhas do MySQL
+
+# 3. Backend Laravel — o container exige este arquivo
+cp projects/lojademo-service/.env.example projects/lojademo-service/.env
+
+# 4. Frontend React (base URL da API em desenvolvimento)
+cp projects/lojademo-react/.env.example projects/lojademo-react/.env
+
+# 5. Subir os containers
+docker compose up --build
 ```
 
-Variáveis utilizadas pelo `docker-compose`:
+**Acesso:**
 
-| Variável        | Descrição           | Padrão        |
-|-----------------|---------------------|---------------|
-| `MYSQL_ROOT_PASSWORD` | Senha root do MySQL | `rootpassword` |
-| `DB_DATABASE`   | Nome do banco       | `lojademo_db`  |
-| `DB_USERNAME`   | Usuário do app      | `lojademo_user` |
-| `DB_PASSWORD`   | Senha do usuário    | `lojademo_pass` |
+| Serviço   | URL                    |
+|-----------|------------------------|
+| Frontend  | http://localhost:3000  |
+| API       | http://localhost:8081   |
 
-### 2. Subir os serviços
+**Primeira vez — gerar chave Laravel e rodar migrations/seeders:**
 
-```bash
-docker compose up -d
-```
-
-Isso sobe:
-
-- **MySQL** na porta `3306` (com healthcheck)
-- **lojademo-service** (Laravel) na porta `8081`
-- **lojademo-react** (Vite) na porta `3000`
-
-### 3. Configurar o backend (primeira vez)
-
-Garanta que exista `projects/lojademo-service/.env` (copie de `.env.example`). Depois suba os containers e rode:
+Se o backend subir mas a API retornar erro de `APP_KEY`, rode **na raiz do projeto** (mesmo diretório onde você executou `docker compose up`):
 
 ```bash
-docker compose up -d
 docker compose exec lojademo-service php artisan key:generate
 docker compose exec lojademo-service php artisan migrate --force
 docker compose exec lojademo-service php artisan db:seed --force
+docker compose restart lojademo-service
 ```
 
-> [!NOTE]
-> O `docker-compose` sobrescreve `DB_HOST`, `DB_DATABASE`, `DB_USERNAME` e `DB_PASSWORD` no container; o restante vem do `.env` do serviço. O `key:generate` persiste no `.env` do host via volume.
+> **Dica:** Os comandos `docker compose exec` e `docker compose restart` usam o **nome do serviço** do YAML (`lojademo-service`, `lojademo-react`, `mysql`). O nome do **container** no `docker ps` será algo como `loja-demo-teste-lojademo-service-1` — o prefixo vem do nome da pasta do projeto. Sempre rode esses comandos a partir da pasta que contém o `docker-compose.yaml`.
 
-### 4. Acessar a aplicação
+### Variáveis de ambiente
 
-- **Frontend:** http://localhost:3000  
-- **API:** http://localhost:8081  
+**Raiz (`.env`)** — usadas pelo `docker-compose` (MySQL e substituição em outros serviços):
 
-O frontend espera a API em `http://localhost:8081/api`. Em `projects/lojademo-react` configure `VITE_API_BASE_URL` (ou `.env`) se usar outra URL.
+| Variável | Descrição |
+|----------|------------|
+| `MYSQL_ROOT_PASSWORD` | Senha root do MySQL |
+| `DB_DATABASE` | Nome do banco |
+| `DB_USERNAME` | Usuário da aplicação |
+| `DB_PASSWORD` | Senha do usuário da aplicação |
 
----
+**Backend (`projects/lojademo-service/.env`)** — Laravel (copie de `.env.example` e ajuste se precisar). O `APP_KEY` pode ser gerado com `php artisan key:generate` dentro do container (passo acima).
 
-## Variáveis do frontend (React)
-
-Em `projects/lojademo-react`:
-
-| Variável              | Descrição                    | Exemplo                    |
-|-----------------------|-----------------------------|----------------------------|
-| `VITE_APP_NAME`       | Nome exibido na aplicação   | `LojaDemo`                 |
-| `VITE_API_BASE_URL`   | Base URL da API             | `http://localhost:8081/api` |
+**Frontend (`projects/lojademo-react/.env`)** — Vite: `VITE_APP_NAME`, `VITE_API_BASE_URL` (ex.: `http://localhost:8081/api` para desenvolvimento).
 
 ---
 
-## API – Endpoints
+## API — Endpoints Principais
 
-### Públicos
+```
+POST   /api/login                    Autenticar usuário
+POST   /api/register                 Cadastrar usuário
+POST   /api/logout              [🔒] Encerrar sessão
+PUT    /api/user/password       [🔒] Alterar senha
 
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| `POST` | `/api/login` | Login (retorna token Sanctum) |
-| `POST` | `/api/register` | Registro de usuário |
-| `GET`  | `/api/products` | Listar produtos (paginação, `?category={id}`, `?search={query}`) |
-| `GET`  | `/api/products/{id}` | Detalhes do produto |
-| `GET`  | `/api/categories` | Listar categorias |
+GET    /api/products                 Listar produtos (paginado, filtro, busca)
+GET    /api/products/{id}            Detalhe do produto
+POST   /api/products            [🔒] Criar produto
+PUT    /api/products/{id}       [🔒] Atualizar produto
+DELETE /api/products/{id}       [🔒] Remover produto
 
-### Protegidos (auth:sanctum)
-
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| `POST` | `/api/logout` | Encerrar sessão |
-| `PUT`  | `/api/user/password` | Alterar senha |
-| `POST` | `/api/products` | Criar produto |
-| `PUT`  | `/api/products/{id}` | Atualizar produto |
-| `DELETE` | `/api/products/{id}` | Remover produto |
-| `POST` | `/api/categories` | Criar categoria |
-| `PUT`  | `/api/categories/{id}` | Atualizar categoria |
-| `DELETE` | `/api/categories/{id}` | Remover categoria |
-
-Requisições protegidas devem enviar o header: `Authorization: Bearer {token}`.
-
----
-
-## Banco de dados
-
-- **Produtos:** `id`, `name`, `description`, `price`, `category_id`, `image_url`, `created_at`, `updated_at`
-- **Categorias:** `id`, `name`, `created_at`, `updated_at`
-- **Usuários:** `id`, `name`, `email`, `password`, `created_at`, `updated_at`
-
-Cadastro de usuário exige e-mail único e senha forte; autenticação é por token (Laravel Sanctum).
-
----
-
-## Comandos úteis
-
-```bash
-# Logs do backend
-docker compose logs -f lojademo-service
-
-# Logs do frontend
-docker compose logs -f lojademo-react
-
-# Parar todos os serviços
-docker compose down
-
-# Parar e remover volumes (apaga dados do MySQL)
-docker compose down -v
+GET    /api/categories               Listar categorias
+POST   /api/categories          [🔒] Criar categoria
+PUT    /api/categories/{id}     [🔒] Atualizar categoria
+DELETE /api/categories/{id}     [🔒] Remover categoria
 ```
 
+Parâmetros de listagem de produtos: `?page=1&per_page=15&category_id=2&search=tênis`
+
 ---
 
-Este projeto foi desenvolvido como catálogo de e-commerce com autenticação, seguindo os requisitos de backend (Laravel + MySQL + Sanctum), frontend (React + UI), padrões Service/Repository, response collection e Docker descritos no escopo.
+## Autor
+
+Feito por **Fael Fernandes** — [GitHub](https://github.com/faelfernandes)
