@@ -27,14 +27,14 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     ports:
-      - "8000:8000"
+      - "8081:8081"
     volumes:
       - ./projects/lojademo-service:/var/www
     command:
       [
         "sh",
         "-c",
-        "composer install --no-scripts --no-autoloader --no-interaction --prefer-dist && composer dump-autoload --optimize && php artisan serve --host=0.0.0.0 --port=8000 && wait",
+        "composer install --no-scripts --no-autoloader --no-interaction --prefer-dist && composer dump-autoload --optimize && php artisan serve --host=0.0.0.0 --port=8081 && wait",
       ]
     env_file:
       - ./projects/lojademo-service/.env
@@ -69,7 +69,7 @@ services:
     volumes:
       - ./projects/lojademo-react:/app
     environment:
-      REACT_APP_API_URL: http://localhost:8000
+      REACT_APP_API_URL: http://localhost:8081
     depends_on:
       - lojademo-service
     networks:

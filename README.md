@@ -79,7 +79,7 @@ docker compose up -d
 Isso sobe:
 
 - **MySQL** na porta `3306` (com healthcheck)
-- **lojademo-service** (Laravel) na porta `8000`
+- **lojademo-service** (Laravel) na porta `8081`
 - **lojademo-react** (Vite) na porta `3000`
 
 ### 3. Configurar o backend (primeira vez)
@@ -99,9 +99,9 @@ docker compose exec lojademo-service php artisan db:seed --force
 ### 4. Acessar a aplicação
 
 - **Frontend:** http://localhost:3000  
-- **API:** http://localhost:8000  
+- **API:** http://localhost:8081  
 
-O frontend espera a API em `http://localhost:8000/api`. Em `projects/lojademo-react` configure `VITE_API_BASE_URL` (ou `.env`) se usar outra URL.
+O frontend espera a API em `http://localhost:8081/api`. Em `projects/lojademo-react` configure `VITE_API_BASE_URL` (ou `.env`) se usar outra URL.
 
 ---
 
@@ -112,7 +112,7 @@ Em `projects/lojademo-react`:
 | Variável              | Descrição                    | Exemplo                    |
 |-----------------------|-----------------------------|----------------------------|
 | `VITE_APP_NAME`       | Nome exibido na aplicação   | `LojaDemo`                 |
-| `VITE_API_BASE_URL`   | Base URL da API             | `http://localhost:8000/api` |
+| `VITE_API_BASE_URL`   | Base URL da API             | `http://localhost:8081/api` |
 
 ---
 

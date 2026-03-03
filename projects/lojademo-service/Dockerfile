@@ -25,5 +25,5 @@ RUN composer dump-autoload --optimize \
     && chmod -R 755 /var/www/storage \
     && chmod -R 755 /var/www/bootstrap/cache
 
-EXPOSE 8000
+EXPOSE 8081
 
