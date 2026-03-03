@@ -54,9 +54,9 @@ Cole o valor em `APP_KEY` no Coolify. **Não** altere depois em produção (inva
 
 ### Opcionais (já têm valor padrão no compose)
 
-- **API (backend):** `https://api-lojademo.rfconsultoria.com.br` (domínio do serviço)
-- **Front:** `https://lojademo.rfconsultoria.com.br`
-- **Base URL da API no front:** `https://api-lojademo.rfconsultoria.com.br/api` (com `/api`; o front usa essa base nas requisições)
+- **API (backend):** `https://api-lojademo.rfsolucoes.com.br` (domínio do serviço)
+- **Front:** `https://lojademo.rfsolucoes.com.br`
+- **Base URL da API no front:** `https://api-lojademo.rfsolucoes.com.br/api` (com `/api`; o front usa essa base nas requisições)
 - `APP_URL`, `SANCTUM_STATEFUL_DOMAINS` e a URL da API já estão definidas no compose. Se usar outros domínios, sobrescreva no Coolify.
 
 ---
@@ -68,12 +68,12 @@ Para o Coolify (Traefik) rotear tráfego para os containers:
 1. **Backend (API)**  
    - Serviço: `lojademo-service`  
    - Porta do container: **8081**  
-   - Atribua o domínio da API: `https://api-lojademo.rfconsultoria.com.br`
+   - Atribua o domínio da API: `https://api-lojademo.rfsolucoes.com.br`
 
 2. **Frontend (SPA)**  
    - Serviço: `lojademo-react`  
    - Porta do container: **3000**  
-   - Atribua o domínio do front: `https://lojademo.rfconsultoria.com.br`
+   - Atribua o domínio do front: `https://lojademo.rfsolucoes.com.br`
 
 No Coolify isso costuma ser feito em **Settings** do recurso ou na configuração do Proxy (Traefik), associando cada domínio ao serviço e à porta correta.
 
@@ -83,7 +83,7 @@ No Coolify isso costuma ser feito em **Settings** do recurso ou na configuraçã
 
 O frontend usa a URL da API em tempo de **build** (Vite). No compose já está:
 
-- `build.args.VITE_API_BASE_URL: https://api-lojademo.rfconsultoria.com.br/api` (base completa com `/api`)
+- `build.args.VITE_API_BASE_URL: https://api-lojademo.rfsolucoes.com.br/api` (base completa com `/api`)
 
 Se você usar outro domínio para a API, configure no Coolify o **Build Argument**:
 
@@ -152,7 +152,7 @@ Volumes persistentes: `mysql_data`, `service_storage` (logs e arquivos do Larave
 - [ ] `APP_KEY` gerado com `php artisan key:generate --show` (nunca alterar depois)
 - [ ] Domínio da API atribuído ao serviço `lojademo-service`, porta **8081**
 - [ ] Domínio do front atribuído ao serviço `lojademo-react`, porta **3000**
-- [ ] Build do front com a base da API incluindo `/api` (build arg `VITE_API_BASE_URL`, ex.: `https://api-lojademo.rfconsultoria.com.br/api`)
+- [ ] Build do front com a base da API incluindo `/api` (build arg `VITE_API_BASE_URL`, ex.: `https://api-lojademo.rfsolucoes.com.br/api`)
 
 ---
 
