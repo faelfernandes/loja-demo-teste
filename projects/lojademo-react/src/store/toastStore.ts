@@ -35,8 +35,7 @@ export const useToastStore = create<ToastState>((set) => ({
         type: options?.type || 'success'
       }] 
     }));
-    
-    // Aumentado para 5 segundos para dar tempo do usuário clicar em "Desfazer"
+
     setTimeout(() => {
       set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) }));
     }, 5000);

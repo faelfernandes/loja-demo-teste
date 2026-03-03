@@ -1,29 +1,48 @@
 import { api } from './api';
-import { Product, PaginatedResponse } from '../types';
+import { Product, PaginatedResponse, ProductListParams } from '../types';
+import type { LaravelPaginatedResponse, LaravelResourceResponse } from '../types/api';
 
-interface FetchProductsParams {
-  page?: number;
-  category?: number | null;
-  search?: string;
-}
+const EMPTY_PAGE: PaginatedResponse<Product> = {
+  data: [],
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  per_page: 16,
+};
 
-/**
- * SERVIÇO DE PRODUTOS (Integração Real com Laravel)
- * 
- * Consome os endpoints:
- * - GET /api/products (com paginação, search e category)
- * - GET /api/products/{id}
- */
 export const ProductService = {
-  getAll: async (params: FetchProductsParams): Promise<PaginatedResponse<Product>> => {
-    // O Axios converte automaticamente o objeto 'params' em Query Strings na URL
-    // Ex: /api/products?page=1&category=2&search=tenis
-    const response = await api.get<PaginatedResponse<Product>>('/products', { params });
-    return response.data;
+  getAll: async (params: ProductListParams): Promise<PaginatedResponse<Product>> => {
+    const response = await api.get<LaravelPaginatedResponse<Product>>('/products', {
+      params: {
+        page: params.page,
+        per_page: params.per_page,
+        category: params.category,
+        search: params.search,
+      },
+    });
+    const body = response.data;
+
+    if (!body?.data || !Array.isArray(body.data) || !body.meta) {
+      return EMPTY_PAGE;
+    }
+
+    return {
+      data: body.data,
+      current_page: body.meta.current_page,
+      last_page: body.meta.last_page,
+      total: body.meta.total,
+      per_page: body.meta.per_page,
+    };
   },
-  
+
   getById: async (id: number): Promise<Product> => {
-    const response = await api.get<Product>(`/products/${id}`);
-    return response.data;
+    const response = await api.get<LaravelResourceResponse<Product>>(`/products/${id}`);
+    const product = response.data?.data;
+
+    if (!product || typeof product.id !== 'number') {
+      throw new Error('Produto não encontrado');
+    }
+
+    return product;
   },
 };
