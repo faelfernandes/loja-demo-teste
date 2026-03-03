@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\IndexProductRequest;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
-use App\Http\Responses\ApiResponse;
+use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Services\ProductService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ProductController extends Controller
 {
@@ -17,39 +18,42 @@ class ProductController extends Controller
         private ProductService $productService
     ) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(IndexProductRequest $request): AnonymousResourceCollection
     {
-        $categoryId = $request->query('category') ? (int) $request->query('category') : null;
-        $search = $request->query('search');
-        $perPage = min((int) $request->query('per_page', 15), 50);
-        $paginated = $this->productService->listPaginated($perPage, $categoryId, $search);
-        return ApiResponse::success($paginated);
+        $paginated = $this->productService->listPaginated(
+            $request->getPerPage(),
+            $request->getCategoryId(),
+            $request->getSearch()
+        );
+
+        return ProductResource::collection($paginated);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Product $product): ProductResource
     {
-        $product = $this->productService->find($id);
-        if (! $product) {
-            return ApiResponse::error('Produto não encontrado', 404);
-        }
-        return ApiResponse::success($product);
+        $product->loadMissing('category');
+
+        return new ProductResource($product);
     }
 
     public function store(StoreProductRequest $request): JsonResponse
     {
         $product = $this->productService->create($request->validated());
-        return ApiResponse::success($product, 'Produto criado com sucesso', 201);
+
+        return (new ProductResource($product))->response()->setStatusCode(201);
     }
 
-    public function update(UpdateProductRequest $request, Product $product): JsonResponse
+    public function update(UpdateProductRequest $request, Product $product): ProductResource
     {
         $product = $this->productService->update($product, $request->validated());
-        return ApiResponse::success($product, 'Produto atualizado com sucesso');
+
+        return new ProductResource($product);
     }
 
     public function destroy(Product $product): JsonResponse
     {
         $this->productService->delete($product);
-        return ApiResponse::success(null, 'Produto excluído com sucesso');
+
+        return response()->json(null, 204);
     }
 }

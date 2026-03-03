@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
-use App\Http\Responses\ApiResponse;
+use App\Http\Requests\UpdatePasswordRequest;
+use App\Http\Resources\UserResource;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -16,33 +19,43 @@ class AuthController extends Controller
     {
         $user = $request->createUser();
         $token = $user->createToken('auth')->plainTextToken;
-        return ApiResponse::success([
-            'user' => $user,
+
+        return response()->json([
+            'user' => new UserResource($user),
             'token' => $token,
             'token_type' => 'Bearer',
-        ], 'Usuário registrado com sucesso', 201);
+        ], 201);
     }
 
     public function login(LoginRequest $request): JsonResponse
     {
-        if (! Auth::attempt($request->only('email', 'password'))) {
+        $user = User::where('email', $request->email)->first();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
                 'email' => ['Credenciais inválidas.'],
             ]);
         }
-        $user = Auth::user();
-        $user->tokens()->delete();
+
         $token = $user->createToken('auth')->plainTextToken;
-        return ApiResponse::success([
-            'user' => $user,
+        return response()->json([
+            'user' => new UserResource($user),
             'token' => $token,
             'token_type' => 'Bearer',
         ]);
     }
 
-    public function logout(): JsonResponse
+    public function logout(Request $request): JsonResponse
     {
-        Auth::user()?->currentAccessToken()?->delete();
-        return ApiResponse::success(null, 'Logout realizado com sucesso');
+        $request->user()?->currentAccessToken()?->delete();
+
+        return response()->json(null, 204);
+    }
+
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
+    {
+        $request->updatePassword();
+
+        return response()->json(['message' => 'Senha atualizada com sucesso.'], 200);
     }
 }
