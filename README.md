@@ -25,7 +25,7 @@ A API segue os padrões **Service** e **Repository** e utiliza **API Resources**
 
 ```
 lojademo/
-├── docker-compose.yml          # Orquestração dos serviços
+├── docker-compose.yaml         # Orquestração dos serviços
 ├── .env.example                # Variáveis do MySQL (raiz)
 └── projects/
     ├── lojademo-service/       # API Laravel
